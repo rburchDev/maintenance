@@ -1,0 +1,31 @@
+app:
+  name: maintenance
+  hostname: maintenance-app
+
+specs:
+  replicaCount: 3
+  trafficPolicy: Local
+
+image:
+  repository: rburch4/maintenanceapp
+  tag: 1.0.0
+  pullPolicy: IfNotPresent
+
+service:
+  name: maintenance-app-node
+  type: NodePort
+  port: 8081
+  protocol: TCP
+  nodePort: 32004
+
+env:
+  mongourl: bW9uZ29kYjovL3Jvb3Q6cm9vdDIzTGlicmFyeUBtb25nby1zdmM6MjcwMTcv
+  secret: c2VjcmV0
+  email: QnJvd241NTkw
+
+healthCheck:
+  path: "/maintenance/ping"
+  initialDelaySeconds: 5
+  periodSeconds: 300
+  timeoutSeconds: 3
+  failureThreshold: 3
