@@ -5,6 +5,7 @@ import com.ryan.maintenance.exceptions.validation.BadRequestException;
 import com.ryan.maintenance.exceptions.validation.NotFoundException;
 import com.ryan.maintenance.libs.base.Base;
 import com.ryan.maintenance.libs.database.Mongo;
+import com.ryan.maintenance.libs.utility.NameFormat;
 import com.ryan.maintenance.libs.validation.Validation;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,6 +27,7 @@ public class ApiController extends Base {
     public ApiController() {
         this.validate = new Validation();
         this.mongo = new Mongo();
+        this.nameFormat = new NameFormat();
     }
 
     @GetMapping(value = "/ping", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -38,16 +40,16 @@ public class ApiController extends Base {
         return new ResponseEntity<>(doc, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/getMaintenance", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/getVehicle", produces = MediaType.APPLICATION_JSON_VALUE)
     @Tag(name = "Maintenance", description = "Set of APIs to maintain a collection of vehicle maintenance records within a MongoDB")
-    public ResponseEntity<Document> getCreds(@RequestParam(value = "year") Integer year, String make, String model)
-            throws NotFoundException, MongoDbException, BadRequestException {
+    public ResponseEntity<Document> getVehicle(@RequestParam(value = "year") Integer year, String make, String model)
+            throws NotFoundException, MongoDbException {
         try {
-            LOGGER.info("Getting Vehicle Maintenance Record for: " + year + " " + make + " " + model);
+            LOGGER.info("Getting Vehicle Record for: " + year + " " + make + " " + model);
+            // Create DB String formatted Vehicle Name
+            String convertedString = this.nameFormat.setName(year, make, model);
 
-            String convertedString = String.format("%d_%s_%s", year,  make, model);
-
-            Document docResponse = this.mongo.getOne("Vehicle", convertedString);
+            Document docResponse = this.mongo.getOne("Vehicle", convertedString, "vehicle");
 
             return new ResponseEntity<>(docResponse, HttpStatus.OK);
 
@@ -59,4 +61,21 @@ public class ApiController extends Base {
             throw new NotFoundException(e.getMessage());
         }
     }
+
+    @PostMapping(value = "/setVehicle", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Tag(name = "Maintenance", description = "Set of APIs to maintain a collection of vehicle maintenance records within a MongoDB")
+    public ResponseEntity<Document> setVehicle(@RequestParam Integer year,
+                                               @RequestParam String make,
+                                               @RequestParam String model
+    ) throws MongoDbException, BadRequestException {
+        try {
+            LOGGER.info("Adding Vehicle to DB");
+            LOGGER.info("Vehicle: " + year.toString() + " " + make + " " + model);
+            // Create DB String formatted Vehicle Name
+            String convertedString = this.nameFormat.setName(year, make, model);
+
+            String docResponse = this.mongo.setOne("Vehicle", convertedString, "vehicle", "vehicle", "");
+        }
+    }
+
 }
