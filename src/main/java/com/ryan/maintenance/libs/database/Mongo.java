@@ -1,17 +1,21 @@
 package com.ryan.maintenance.libs.database;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
 import com.mongodb.client.*;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
 import com.ryan.maintenance.exceptions.mongo.MongoDbException;
 import com.ryan.maintenance.exceptions.validation.NotFoundException;
 import com.ryan.maintenance.libs.base.Base;
 import com.ryan.maintenance.libs.utility.Utility;
 import com.ryan.maintenance.libs.validation.Validation;
 
-import com.ryan.maintenance.models.DocumentModel;
+import com.ryan.maintenance.models.VehicleModel;
 import io.github.cdimascio.dotenv.Dotenv;
 
 import org.bson.BsonDocument;
@@ -39,11 +43,18 @@ public class Mongo extends Base {
     private Document setDocument(String model, String data) {
         try {
             switch (model) {
-                case "vehicle":
-
-                case "maintenance":
+                case "vehicle" -> {
+                    VehicleModel vehicleModel = new VehicleModel(data);
+                    ObjectMapper mapper = new ObjectMapper();
+                    String docString = mapper.writeValueAsString(vehicleModel);
+                    return Document.parse(docString);
+                }
+                case "maintenance" -> LOGGER.info("SOON TO HAVE");
             }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
+        return null;
     }
 
     /**
@@ -154,10 +165,22 @@ public class Mongo extends Base {
         return response;
     }
 
-    public String setOne(String key, String value, String collection, String model, String data) {
+    public String setOne(String key, String value, String collection, String model, Boolean upsert) throws MongoDbException {
+        try {
+            Document modeledDoc = Objects.requireNonNull(setDocument(model, value));
 
-        Document modeledDoc = Objects.requireNonNull(setDocument(model, data));
+            HashMap<String, MongoCollection<Document>> collections = mongoClient();
 
+            Bson filter = Filters.eq(key, value);
+            Bson update = new Document("$set", modeledDoc);
+            UpdateOptions options = new UpdateOptions().upsert(upsert);
+
+            collections.get(collection).updateOne(filter, update, options);
+        } catch (MongoException | MongoDbException e) {
+            LOGGER.error("An error occurred with MongoDB");
+            throw new MongoDbException("Error with getting Mongo Document", e);
+        }
+        return "Success";
     }
 }
 

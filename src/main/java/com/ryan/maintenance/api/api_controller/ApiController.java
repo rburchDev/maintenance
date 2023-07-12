@@ -67,15 +67,23 @@ public class ApiController extends Base {
     public ResponseEntity<Document> setVehicle(@RequestParam Integer year,
                                                @RequestParam String make,
                                                @RequestParam String model
-    ) throws MongoDbException, BadRequestException {
+    ) throws MongoDbException, BadRequestException, NotFoundException {
         try {
             LOGGER.info("Adding Vehicle to DB");
             LOGGER.info("Vehicle: " + year.toString() + " " + make + " " + model);
             // Create DB String formatted Vehicle Name
             String convertedString = this.nameFormat.setName(year, make, model);
 
-            String docResponse = this.mongo.setOne("Vehicle", convertedString, "vehicle", "vehicle", "");
+            String response = this.mongo.setOne("Vehicle", convertedString, "vehicle", "vehicle", true);
+
+            //Check response
+            Document docResponse = this.validate.checkResponse(response);
+
+            LOGGER.info(docResponse);
+            return new ResponseEntity<>(docResponse, HttpStatus.OK);
+        } catch (NotFoundException e) {
+            LOGGER.error(e.getMessage());
+            throw new NotFoundException(e.getMessage());
         }
     }
-
 }
