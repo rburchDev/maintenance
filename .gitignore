@@ -24,3 +24,9 @@ hs_err_pid*
 replay_pid*
 
 .idea
+
+maintenance-var.env
+
+target/*
+
+test.*
