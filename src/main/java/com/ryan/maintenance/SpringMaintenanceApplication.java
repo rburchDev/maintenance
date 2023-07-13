@@ -15,12 +15,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication
 @EnableMongoRepositories
-@SecurityScheme(name = "vaultAPI", scheme = "basic", type = SecuritySchemeType.HTTP, in = SecuritySchemeIn.HEADER)
+@SecurityScheme(name = "maintenanceAPI", scheme = "basic", type = SecuritySchemeType.HTTP, in = SecuritySchemeIn.HEADER)
 public class SpringMaintenanceApplication {
     private static final Logger LOGGER = LogManager.getLogger(SpringMaintenanceApplication.class);
     public static void main(String[] args) {
 
-        LOGGER.info("Starting SpringBoot Vault APP");
+        LOGGER.info("Starting SpringBoot Maintenance APP");
 
         SpringApplication.run(SpringMaintenanceApplication.class, args);
 

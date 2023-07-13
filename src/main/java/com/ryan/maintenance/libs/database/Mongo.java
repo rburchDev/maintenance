@@ -23,6 +23,8 @@ import org.bson.BsonInt64;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import java.time.LocalDate;
+
 import java.util.Objects;
 import java.util.HashMap;
 
@@ -40,11 +42,11 @@ public class Mongo extends Base {
         this.validate = new Validation();
     }
 
-    private Document setDocument(String model, String data) {
+    private Document setDocument(String model, String data, String datePurchased) {
         try {
             switch (model) {
                 case "vehicle" -> {
-                    VehicleModel vehicleModel = new VehicleModel(data);
+                    VehicleModel vehicleModel = new VehicleModel(data, LocalDate.now().toString(), datePurchased);
                     ObjectMapper mapper = new ObjectMapper();
                     String docString = mapper.writeValueAsString(vehicleModel);
                     return Document.parse(docString);
@@ -165,9 +167,9 @@ public class Mongo extends Base {
         return response;
     }
 
-    public String setOne(String key, String value, String collection, String model, Boolean upsert) throws MongoDbException {
+    public String setOne(String key, String value, String datePurchased, String collection, Boolean upsert) throws MongoDbException {
         try {
-            Document modeledDoc = Objects.requireNonNull(setDocument(model, value));
+            Document modeledDoc = Objects.requireNonNull(setDocument(collection, value, datePurchased));
 
             HashMap<String, MongoCollection<Document>> collections = mongoClient();
 

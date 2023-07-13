@@ -15,6 +15,6 @@ public class NameFormat extends Base {
      */
     public String setName(Integer year, String make, String model) {
         String refinedModel = model.replace(" ", "_");
-        return String.format("%d_%s_%s", year,  make, refinedModel);
+        return String.format("%d_%s_%s", year,  make.toLowerCase(), refinedModel.toLowerCase());
     }
 }

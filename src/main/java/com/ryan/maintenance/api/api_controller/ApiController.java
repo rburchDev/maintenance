@@ -6,6 +6,7 @@ import com.ryan.maintenance.exceptions.validation.NotFoundException;
 import com.ryan.maintenance.libs.base.Base;
 import com.ryan.maintenance.libs.database.Mongo;
 import com.ryan.maintenance.libs.utility.NameFormat;
+import com.ryan.maintenance.libs.utility.DateFormat;
 import com.ryan.maintenance.libs.validation.Validation;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,6 +29,7 @@ public class ApiController extends Base {
         this.validate = new Validation();
         this.mongo = new Mongo();
         this.nameFormat = new NameFormat();
+        this.dateFormat = new DateFormat();
     }
 
     @GetMapping(value = "/ping", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -66,15 +68,64 @@ public class ApiController extends Base {
     @Tag(name = "Maintenance", description = "Set of APIs to maintain a collection of vehicle maintenance records within a MongoDB")
     public ResponseEntity<Document> setVehicle(@RequestParam Integer year,
                                                @RequestParam String make,
-                                               @RequestParam String model
-    ) throws MongoDbException, BadRequestException, NotFoundException {
+                                               @RequestParam String model,
+                                               @RequestParam(defaultValue = "YYYY/MM/dd") String datePurchased
+    ) throws MongoDbException, NotFoundException, BadRequestException {
         try {
             LOGGER.info("Adding Vehicle to DB");
             LOGGER.info("Vehicle: " + year.toString() + " " + make + " " + model);
             // Create DB String formatted Vehicle Name
             String convertedString = this.nameFormat.setName(year, make, model);
 
-            String response = this.mongo.setOne("Vehicle", convertedString, "vehicle", "vehicle", true);
+            // Get the correct purchasedDate formatted String
+            String formattedDate = this.dateFormat.formatDate(datePurchased);
+
+            //Need to check if the credentials exists already
+            try{
+                Document getDocResponse = this.mongo.getOne("Vehicle", convertedString, "vehicle");
+                if (!getDocResponse.isEmpty()) {
+                    throw new BadRequestException("Item already exists... Please use PUT method to update...");
+                }
+            } catch (NotFoundException e) {
+                LOGGER.debug(e.getMessage());
+            }
+
+            String response = this.mongo.setOne("Vehicle", convertedString, formattedDate, "vehicle", true);
+
+            //Check response
+            Document docResponse = this.validate.checkResponse(response);
+
+            LOGGER.info(docResponse);
+            return new ResponseEntity<>(docResponse, HttpStatus.OK);
+        } catch (NotFoundException e) {
+            LOGGER.error(e.getMessage());
+            throw new NotFoundException(e.getMessage());
+        } catch (BadRequestException e) {
+            LOGGER.error(e.getMessage());
+            throw new BadRequestException(e.getMessage());
+        }
+    }
+
+    @PatchMapping(value = "/updateVehicle", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Tag(name = "Maintenance", description = "Update of APIs to maintain a collection of vehicle maintenance records within a MongoDB")
+    public ResponseEntity<Document> updateVehicle(@RequestParam Integer year,
+                                                  @RequestParam String make,
+                                                  @RequestParam String model,
+                                                  @RequestParam(defaultValue = "YYYY/MM/dd") String datePurchased
+    ) throws MongoDbException, NotFoundException {
+        try {
+            LOGGER.info("Updating Vehicle to DB");
+            LOGGER.info("Vehicle: " + year.toString() + " " + make + " " + model);
+            // Create DB String formatted Vehicle Name
+            String convertedString = this.nameFormat.setName(year, make, model);
+
+            // Get the correct purchasedDate formatted String
+            String formattedDate = this.dateFormat.formatDate(datePurchased);
+
+            //If it runs without error continue
+            this.mongo.getOne("Vehicle", convertedString, "vehicle");
+
+            String response = this.mongo.setOne("Vehicle", convertedString, formattedDate, "vehicle", false);
 
             //Check response
             Document docResponse = this.validate.checkResponse(response);
@@ -85,5 +136,12 @@ public class ApiController extends Base {
             LOGGER.error(e.getMessage());
             throw new NotFoundException(e.getMessage());
         }
+    }
+
+    @DeleteMapping(value = "/deleteVehicle", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Tag(name = "Maintenance", description = "Set of APIs to maintain a collection of vehicle maintenance records within a MongoDB")
+    public ResponseEntity<Document> deleteCreds(@RequestParam(value = "year") Integer year, String make, String model)
+            throws MongoDbException, NotFoundException, BadRequestException {
+
     }
 }

@@ -13,6 +13,10 @@ package:
 run-package:
 	java -jar target/spring-maintenance-0.0.1-SNAPSHOT.jar
 
+local-run:
+	make package
+	make run-package
+
 docker-build:
 	docker build -t rburch4/maintenanceapp:1.0.0 -f docker/springboot/Dockerfile .
 	docker push rburch4/maintenanceapp:1.0.0
